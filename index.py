@@ -7,6 +7,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 import sys
 import getopt
+import linecache
 
 # Define a Node class to represent each element in the linked list
 class Node:
@@ -29,50 +30,51 @@ def write_merged_index_with_skip_pointers_to_disk(merged_index, output_file):
 def build_index(in_dir, out_dict, out_postings):
     # Define block size and memory limit
     block_size = 1000  # Adjust based on memory constraints
-    memory_limit = 10000  # Adjust based on available memory
+    memory_limit = 100  # Adjust based on available memory
 
     # Initialize an empty dictionary to hold the index
     index = {}
-    # Initialize an empty dictionary to hold document frequencies
+    # doc_freq dictionary, to be kept in memory
     doc_freq = {}
-    # Initialize an empty dictionary to hold postings lists
+    # postings_list dictionary, to be stored in harddisk after memory limit exceeding
     postings_lists = {}
 
     # Initialize NLTK's Porter stemmer
     stemmer = PorterStemmer()
     
-    # Process each document in the specified directory
-    print(os.listdir(in_dir))
-    for doc_id, filename in enumerate(os.listdir(in_dir)):
-        with open(os.path.join(in_dir, filename), 'r') as f:
-            # Tokenize the document into words
-            words = word_tokenize(f.read())
-            # Apply stemming to each word
-            stemmed_words = [stemmer.stem(word.lower()) for word in words]
-            
-            # Update document frequency counts
-            unique_words = set(stemmed_words)
-            for word in unique_words:
-                if word in doc_freq:
-                    doc_freq[word] += 1
-                else:
-                    doc_freq[word] = 1
+    # Open the files in increasing numerical order of the filenames
+    sorted_filenames = sorted(os.listdir(in_dir), key=int)
 
-            # Process each word in the document
-            for word in stemmed_words:
-                if word not in postings_lists:
-                    postings_lists[word] = Node(doc_id)
+    for filename in sorted_filenames:
+        with open(os.path.join(in_dir, filename), 'r') as f:
+            
+            # Tokenize content in file into a list of tokens
+            words = word_tokenize(f.read())
+            # Stem each token into a term 
+            stemmed_words = [stemmer.stem(word.lower()) for word in words]
+            terms = set(stemmed_words)
+
+            # Update document frequency of terms
+            for term in terms:
+                if term in doc_freq:
+                    doc_freq[term] += 1
                 else:
-                    current_node = postings_lists[word]
+                    doc_freq[term] = 1
+
+            # Update posting lists of each term
+            for term in terms:
+                if term not in postings_lists:
+                    postings_lists[term] = Node(filename) # create a linked list for the current term's posting list
+                else:
+                    current_node = postings_lists[term] # add new node to the posting list
                     while current_node.next:
                         current_node = current_node.next
-                    current_node.next = Node(doc_id)
-
-                # Sort document IDs within the posting list
-                postings_lists[word] = sort_postings_list(postings_lists[word])
+                    current_node.next = Node(filename)
 
                 # Check memory limit
                 if sys.getsizeof(postings_lists) > memory_limit:
+                    # Sort document IDs within the posting list
+                    # postings_lists[term] = sort_postings_list(postings_lists[term])
                     write_block_to_disk(postings_lists, len(index), out_dict, out_postings)
                     postings_lists = {}
 
@@ -107,8 +109,10 @@ def write_block_to_disk(postings_lists, block_number, dictionary_file, postings_
     with open(dictionary_file, 'a') as dict_file, open(postings_file, 'a') as postings_file:
         for term in sorted_terms:
             postings_list = postings_lists[term]
+
             # Write term and its pointer to dictionary file
             dict_file.write(f"{term}: {block_number}\n")
+
             # Write postings list to postings file
             while postings_list:
                 postings_file.write(f"{postings_list.doc_id} ")
