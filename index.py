@@ -80,6 +80,14 @@ def build_index(in_dir, out_dict, out_postings):
     write_block_to_disk(postings_lists, doc_freq, temp_dict_path, temp_posting_path)
     n_way_merge(block_pointers, temp_dict_path, temp_posting_path, out_dict, out_postings) 
 
+    # Write full list of doc_id to posting_file
+    with open(out_dict, 'a') as dict_file, open(out_postings, 'a') as postings_file:
+        pointer = postings_file.tell()
+        for doc_id in sorted_filenames:
+            postings_file.write(str(doc_id) + ' ')
+        postings_file.write('\n')
+        dict_file.write("Full doc_id pointer: " + str(pointer))
+
 def write_block_to_disk(postings_lists, doc_freq, dictionary_file, postings_file):
     # Sort all keys before writing to disk
     sorted_terms = sorted(postings_lists.keys())
@@ -123,13 +131,13 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         index = 0
 
         # Read initial term information from each block and store its posting pointers
-        print("Current terms under consideration")
+        # print("Current terms under consideration")
         for i, pointer in enumerate(block_pointers[:]):
             block_handles[i].seek(pointer)
             term_len = block_handles[i].readline()
             term_info = term_len.strip().split(' ')
             term = term_info[0].strip()
-            print(term)
+            # print(term)
             if term == '-----BLOCK_END-----':
                 block_pointers.remove(pointer)
                 continue
@@ -140,13 +148,13 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
             index += 1
         
         # All blocks have reached the end
-        print("This is the list of current block pointers")
-        print(block_pointers)
+        # print("This is the list of current block pointers")
+        # print(block_pointers)
         if not block_pointers:
             break
 
-        print("This is cuurent list of terms after processing")
-        print(current_terms)
+        # print("This is cuurent list of terms after processing")
+        # print(current_terms)
         
         # Find all terms to be merged
         sorted_terms = sorted(current_terms, key=lambda x: x[0])
@@ -173,15 +181,15 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
                 break
         # print(posting_to_merge)
         # print(doc_freq_to_merge)
-        print("These are the current terms for merging")
-        print(terms_to_merge)
+        # print("These are the current terms for merging")
+        # print(terms_to_merge)
 
-        print("Block pointer after update")
+        # print("Block pointer after update")
         # Advancing pointers
         for term in terms_to_merge:
             index = term[1]
             block_pointers[index] += len(term_lengths[index])
-            print(block_pointers[index])
+            # print(block_pointers[index])
 
         # Merging step
         # Merge posting

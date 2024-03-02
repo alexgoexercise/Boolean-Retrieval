@@ -12,6 +12,6 @@ def read_file_with_pointer(file_path, pointer):
         print(f"An error occurred: {str(e)}")
 
 # Example usage:
-file_path = "temp_posting"  # Replace with your file path
-pointer = 8564 # Replace with the desired pointer position
+file_path = "postings.txt"  # Replace with your file path
+pointer = 3065181 # Replace with the desired pointer position
 read_file_with_pointer(file_path, pointer)
