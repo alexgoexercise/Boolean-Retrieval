@@ -14,9 +14,9 @@ are usually sufficient.
 
 == Files included with this submission ==
 
-List the files in your submission here and provide a short 1 line
-description of each file.  Make sure your submission's files are named
-and formatted correctly.
+index.py: This is the python program that consctructs the index and store them into hard disk.
+search.py: This is the python program that processes the query and returns the index of relevant documents.
+
 
 == Statement of individual work ==
 
