@@ -50,7 +50,7 @@ search.py: This is the python program that processes the query and returns the i
 other files:
 README.txt: This file is served as an explanation of the submission.
 sanity-queries.txt: This file contains the queries that are used to test the search.py program.
-essay_answers.txt: This file contains the answers to the essay questions.
+ESSAY.txt: This file contains the answers to the essay questions.
 
 == Statement of individual work ==
 
