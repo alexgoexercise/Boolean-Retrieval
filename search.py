@@ -28,7 +28,12 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
     # Function to retrieve the posting list of the full set
     def get_full_set_postings(dictionary, postings_file):
-        # wait to see how to get the full set
+        frequency, offset = dictionary['Full_doc_id_pointer']
+        postings_file.seek(offset)
+        posting_list_raw = postings_file.readline().split()
+        skip_count = int(posting_list_raw[0])
+        posting_list = construct_linked_list(skip_count, [int(i) for i in posting_list_raw[1:]])
+        return posting_list
 
     # Function of looking up for the posting list of a certain term giving the address of the term
     # The posting list is reconsctructed as a linked list with skip pointers, the head of the linked list is returned
@@ -37,6 +42,16 @@ def run_search(dict_file, postings_file, queries_file, results_file):
             frequency, offset = dictionary[term]
             postings_file.seek(offset)
             posting_list_raw = postings_file.readline().split()
+            if len(posting_list_raw) == 0:
+                postings_file.seek(17)
+                print(postings_file.readline())
+                posting_list_raw = postings_file.readline().split()
+                # postings_file.seek(offset+1)
+                # print('The line is: ', postings_file.readline())
+                # print('The term is: ', term)
+                # print('The next line is: ', postings_file.readline())
+                # print('The next next line is: ', postings_file.readline())
+                # print('The next next next line is: ', postings_file.readline())
             skip_count = int(posting_list_raw[0])
             posting_list = [int(i) for i in posting_list_raw[1:]]
             posting_linked_list = construct_linked_list(skip_count, posting_list)
@@ -84,6 +99,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         current = dummy
 
         while p1 and p2:
+            # If the document IDs match, add the current document ID to the result list
             if p1.doc_id == p2.doc_id:
                 current.next = Node(p1.doc_id)
                 current = current.next
@@ -107,30 +123,30 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
     # Function that computes the union of two posting lists
     def union_postings(p1, p2):
-        # Dummy head node to simplify insertion logic
         dummy = Node(None)
         current = dummy
 
         while p1 or p2:
-            # Determine which node to add next
-            if p1 == p2:
-                next_node = p1
+            if p1 is not None and (p2 is None or p1.doc_id < p2.doc_id):
+                # p1 is the next node to add
+                current.next = Node(p1.doc_id)
                 p1 = p1.next
+            elif p2 is not None and (p1 is None or p2.doc_id < p1.doc_id):
+                # p2 is the next node to add
+                current.next = Node(p2.doc_id)
                 p2 = p2.next
-            elif not p2 or (p1 and p1.doc_id < p2.doc_id):
-                next_node = p1
+            elif p1 is not None and p2 is not None and p1.doc_id == p2.doc_id:
+                # Both p1 and p2 have the same doc_id, add either one and advance both
+                current.next = Node(p1.doc_id)
                 p1 = p1.next
-            else:
-                next_node = p2
                 p2 = p2.next
 
-            # Add the selected node to the result list
-            current.next = Node(next_node.doc_id)
             current = current.next
-        # Return the start of the merged list, skipping the dummy head
+
         return dummy.next
 
     # Function that computes the negation of a posting list (to the full set)
+    # This is written under the assumption that the full set is a superset of the posting list
     def negate_postings(p, full_set):
         dummy = Node(None)
         current = dummy
@@ -157,21 +173,23 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         current = dummy
 
         while p1 or p2:
-            # If the current document ID is in the first list but not in the second list, add it to the result
-            if p1 and (not p2 or p1.doc_id < p2.doc_id):
+            # If p2 is None or p1 is not None and p1's doc_id is less than p2's doc_id
+            if p2 is None or (p1 is not None and p1.doc_id < p2.doc_id):
                 current.next = Node(p1.doc_id)
                 current = current.next
-                if p1.skip and (not p2 or p1.skip.doc_id < p2.doc_id):
+                # If p1 has a skip pointer and it points to a doc_id that is still less than p2's doc_id
+                if p1.skip and (p2 is None or p1.skip.doc_id < p2.doc_id):
                     p1 = p1.skip
                 else:
                     p1 = p1.next
-            # If the current document ID is in both lists, skip it
-            elif p1.doc_id == p2.doc_id:
+            # If both p1 and p2 are not None and have the same doc_id
+            elif p1 is not None and p2 is not None and p1.doc_id == p2.doc_id:
                 p1 = p1.next
                 p2 = p2.next
-            # If the current document ID is in the second list but not in the first list, skip it
+            # If p1 is None or p2's doc_id is less than p1's doc_id
             else:
-                if p2.skip and (not p1 or p2.skip.doc_id < p1.doc_id):
+                # If p2 has a skip pointer and it points to a doc_id that is still less than p1's doc_id
+                if p2.skip and (p1 is None or p2.skip.doc_id < p1.doc_id):
                     p2 = p2.skip
                 else:
                     p2 = p2.next
@@ -300,11 +318,12 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
         for i, token in enumerate(parsed_tokens):
             if token not in expected_tokens_start:
+                print('Query: ', tokens, ' has invalid token')
                 print(f'Unexpected token: {token}')
                 return False  # Found an unexpected token
 
             # Update expected tokens based on the current token
-            expected_tokens = valid_next_tokens.get(token, set())
+            expected_tokens_start = valid_next_tokens.get(token, set())
 
         if parsed_tokens[-1] in {'AND', 'OR', 'NOT'}:
             print('The query should not end with an operator')
@@ -361,16 +380,20 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     # Reconstructing the dictionary from the file into memory
     dictionary = {}
     df = open(dict_file, 'r')
-    dictionary_raw = df.readlines()
+    dictionary_raw = df.read().split('\n')
     for line in dictionary_raw:
-        term, frequency, offset = read_dictionary_line(line)
-        dictionary[term] = (frequency, offset)
+        if line != '':
+            term, frequency, offset = read_dictionary_line(line)
+            dictionary[term] = (frequency, offset)
 
     # Create a file to write the results
     rf = open(results_file, 'w')
+    pf = open(postings_file, 'r')
 
     # Process the queries and write to the result file
-    process_query(queries, dictionary, postings_file, rf)
+    process_query(queries, dictionary, pf, rf)
+
+
 
 
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None

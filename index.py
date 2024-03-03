@@ -30,9 +30,10 @@ def write_merged_index_with_skip_pointers_to_disk(merged_index, output_file):
 def build_index(in_dir, out_dict, out_postings):   
     memory_limit = 100000  # Adjust based on available memory
     current_dir = os.getcwd()
-    temp_posting_path = os.path.join(current_dir, "temp_posting")
-    temp_dict_path = os.path.join(current_dir, "temp_dict")
-
+    temp_posting_path = os.path.join(current_dir, "temp_posting.txt")
+    temp_dict_path = os.path.join(current_dir, "temp_dict.txt")
+    print(temp_posting_path)
+    print(temp_dict_path)
     # doc_freq dictionary, to be kept in memory
     doc_freq = {}
     # postings_list dictionary, to be stored in harddisk after memory limit exceeding
@@ -133,8 +134,12 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         # Read initial term information from each block and store its posting pointers
         # print("Current terms under consideration")
         for i, pointer in enumerate(block_pointers[:]):
+            print("This is the pointer")
+            print(pointer)
             block_handles[i].seek(pointer)
             term_len = block_handles[i].readline()
+            print("This is the term before processing")
+            print(term_len)
             term_info = term_len.strip().split(' ')
             term = term_info[0].strip()
             # print(term)
@@ -142,6 +147,8 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
                 block_pointers.remove(pointer)
                 continue
             term_lengths.append(term_len)
+            print("This is the term info")
+            print(term_info)
             doc_freq.append(int(term_info[1]))
             posting_pointers.append(int(term_info[2]))
             current_terms.append((term, index))
