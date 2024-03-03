@@ -19,21 +19,13 @@ class Posting:
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
 
-def load_block_from_disk(block_file):
-    with open(block_file, 'rb') as f:
-        return pickle.load(f)
-
-def write_merged_index_with_skip_pointers_to_disk(merged_index, output_file):
-    with open(output_file, 'wb') as f:
-        pickle.dump(merged_index, f)
-
 def build_index(in_dir, out_dict, out_postings):   
     memory_limit = 100000  # Adjust based on available memory
+    # the below line returns the current working directory
+    # (However, when I was running it on Pycharm, it was the directory of the Pycharm bin folder)
     current_dir = os.getcwd()
     temp_posting_path = os.path.join(current_dir, "temp_posting.txt")
     temp_dict_path = os.path.join(current_dir, "temp_dict.txt")
-    print(temp_posting_path)
-    print(temp_dict_path)
     # doc_freq dictionary, to be kept in memory
     doc_freq = {}
     # postings_list dictionary, to be stored in harddisk after memory limit exceeding
@@ -55,14 +47,16 @@ def build_index(in_dir, out_dict, out_postings):
             # Stem each token into a term 
             stemmed_words = [stemmer.stem(word.lower()) for word in words]
             terms = set(stemmed_words)
-            
-            # Update document frequency of terms
+
             for term in terms:
+                # Update document frequency of terms
                 doc_freq[term] = doc_freq.get(term, 0) + 1
-            
+
+                # Update postings list of terms
                 if term not in postings_lists:
-                    postings_lists[term] = Posting(filename)
+                    postings_lists[term] = Posting(filename) # Posting is the Node class
                 else:
+                    # Traverse the linked list to find the end and then add the new node
                     current_node = postings_lists[term]
                     while current_node.next:
                         current_node = current_node.next
@@ -73,7 +67,7 @@ def build_index(in_dir, out_dict, out_postings):
                     with open(temp_dict_path, 'a') as dict_file: # Open the dictionary file in append mode for writing
                         # Store the pointer to the starting term of the next block of dictionary
                         block_pointers.append(dict_file.tell())
-                    # print(block_pointers)
+                    # Reset the postings_lists and doc_freq dictionaries
                     postings_lists = {}
                     doc_freq = {}
     
@@ -87,7 +81,7 @@ def build_index(in_dir, out_dict, out_postings):
         for doc_id in sorted_filenames:
             postings_file.write(str(doc_id) + ' ')
         postings_file.write('\n')
-        dict_file.write("Full_doc_id_pointer 1" + str(pointer))
+        dict_file.write("Full_doc_id_pointer 1 " + str(pointer))
 
     # Delete temporary files
     if os.path.exists(temp_posting_path):
@@ -140,44 +134,38 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         # Read initial term information from each block and store its posting pointers
         # print("Current terms under consideration")
         for i, pointer in enumerate(block_pointers[:]):
-            print("This is the pointer")
-            print(pointer)
+            # print("This is the pointer")
+            # print(pointer)
             block_handles[i].seek(pointer)
             # term + doc_freq + posting pointer + self pointer in a block
             term_len = block_handles[i].readline()
-            print("This is the term before processing")
-            print(term_len)
+            if term_len == '\n':
+                term_len = block_handles[i].readline()
+            # print("This is the term before processing")
+            # print(term_len)
             term_info = term_len.strip().split(' ')
-            # print(term_info)
             term = term_info[0].strip()
-            # print(term)
             if term == '-----BLOCK_END-----':
                 block_pointers.remove(pointer)
                 continue
             term_lengths.append(term_len)
-            print("This is the term info")
-            print(term_info)
+            # print("This is the term info")
+            # print(term_info)
             doc_freq.append(int(term_info[1]))
             posting_pointers.append(int(term_info[2]))
             current_terms.append((term, index))
             index += 1
         
         # All blocks have reached the end
-        # print("This is the list of current block pointers")
-        # print(block_pointers)
         if not block_pointers:
             break
-
-        # print("This is cuurent list of terms after processing")
-        # print(current_terms)
         
         # Find all terms to be merged
         sorted_terms = sorted(current_terms, key=lambda x: x[0])
-        # print("sorted_terms")
-        # print(sorted_terms)
-        # print(sorted_terms[0])
-        # print(sorted_terms[0][0])
         smallest_term = sorted_terms[0][0]
+
+        print("This is the smallest term")
+        print(smallest_term)
 
         # Find their corresponding posting list and doc_freq of the terms
         terms_to_merge = []
@@ -185,26 +173,27 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         doc_freq_to_merge = []
         for term in sorted_terms:   
             if term[0] == smallest_term:
-                # print("Checking sorting term")
-                # print(term)
-                # print(term[1])
-                # print(posting_pointers[term[1]])
                 terms_to_merge.append(term)
                 posting_to_merge.append(posting_pointers[term[1]])
                 doc_freq_to_merge.append([doc_freq[term[1]]])
             else:
                 break
-        # print(posting_to_merge)
-        # print(doc_freq_to_merge)
-        # print("These are the current terms for merging")
-        # print(terms_to_merge)
 
-        # print("Block pointer after update")
         # Advancing pointers
         for term in terms_to_merge:
             index = term[1]
+            temp_block_pointer = block_pointers[index]
+            temp_handle = open(read_dictionary_file, 'r')
+            temp_handle.seek(temp_block_pointer)
+            temp_line = temp_handle.readline()
+            # print('the term is: ', term)
+            # print('the line is: ', temp_line)
+            # print('old pointer was: ', temp_block_pointer)
+            block_pointers[index] = temp_handle.tell()
+            # print('new pointer is: ', str(block_pointers[index]))
             block_pointers[index] += len(term_lengths[index])
-            # print(block_pointers[index])
+            temp_handle.close()
+
 
         # Merging step
         # Merge posting
@@ -219,14 +208,9 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         for posting in posting_list:
             for i in posting:
                 merged_postings.append(i)
-        # print(merged_postings) 
                 
         # Merge doc_freq
         final_doc_freq = sum(sum(sublist) for sublist in doc_freq_to_merge)
-        # print(final_doc_freq)
-        # print("Here are the list of freq to merge")
-        # print(doc_freq_to_merge)
-        # print(final_doc_freq)
         # Write merged dictionary and posting lists to final files
         number_of_skips = str(round(math.sqrt(len(merged_postings)))) 
         merged_postings_string = ' '.join(str(posting_id) for posting_id in merged_postings)
@@ -236,9 +220,6 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
 
     for handle in block_handles + posting_handles:
         handle.close()
-
-    # Print the merged postings list
-    # print("Merging completes!\n")
         
 def main():
     # Set default values

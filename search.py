@@ -73,7 +73,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 current.next = Node(doc_id)
                 current = current.next
             # Set skip pointer and reset counter when it reaches skip_count
-            if counter == skip_count:
+            if counter == skip_count and skip_count > 1:
                 if current_skip is not None:
                     current_skip.skip = current
                     current_skip = current
