@@ -13,5 +13,5 @@ def read_file_with_pointer(file_path, pointer):
 
 # Example usage:
 file_path = "postings.txt"  # Replace with your file path
-pointer = 3065181 # Replace with the desired pointer position
+pointer = 2441074 # Replace with the desired pointer position
 read_file_with_pointer(file_path, pointer)
