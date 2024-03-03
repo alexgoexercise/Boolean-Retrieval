@@ -1,0 +1,19 @@
+1.
+Removing numbers from the dictionary and posting list would be a good idea only if the search engine is not designed for
+mathematical or statistical related uses. This is because the numbers are important in these fields and removing them
+would make the search engine less useful.
+An idea would be normalised all the numbers as the same token (eg. <NUMBER>) and then when the query is processed,
+the numbers in the query would be replaced with <NUMBER> too. This way, during the search process, all the numbers would
+be treated equally and in this case, the search engine will not be able to tell the difference between any numbers.
+However, this would greatly reduce the dictionary and posting list on the disk space. From what we observed, it reduces
+the disk storage by around 40% when we normalise the numbers.
+2.
+The Pro of removing stop words would be that it would reduce the size of the dictionary and posting list. This speeds up
+the search process as the search engine would have to search through less data. However, this makes the search engine
+less powerful in handling cases when stop words are involved.
+3.
+The NLTK library might not be able to handel certain cases when the text is not considered normal. For example, the word
+tokenizer will identify 'U.S.A.' as 'U.S.A' and '.'. This is not ideal as 'U.S.A.' should be considered as one token.
+While this can be handled by combining word_tokenize and sent_tokenize, there are other extreme cases when it is hard
+for NLTK to handle. For example, Before Custom Rule: ["Dr.", "John", "Smith"] → ["Dr", ".", "John", "Smith"]. However, if
+we want to keep "Dr." as one token, we would have to write a custom rule to handle this case.
