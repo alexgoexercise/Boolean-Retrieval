@@ -263,26 +263,6 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 operand_stack.append(result)
         return operand_stack.pop()
 
-    # Function that checks if the query is valid
-    def is_valid_query(query):
-        # Regular expression to match valid tokens with proper whitespace
-        token_pattern = re.compile(r'(?:\s*\b(?:AND|OR)\b\s+NOT\s+|\s*\b(?:AND|OR|NOT)\b\s+|\s*\(|\)\s*|\w+\s*)')
-        tokens = token_pattern.findall(query)
-
-        # Reconstruct the query from tokens to remove extra spaces
-        reconstructed_query = ''.join(tokens).strip()
-
-        # Check if the reconstructed query matches the original query (to ensure proper whitespace usage)
-        if reconstructed_query != query.strip():
-            return False  # Invalid spacing or unrecognized tokens
-
-        # Check for invalid sequences such as 'NOT AND', 'NOT OR', 'AND AND', etc.
-        invalid_sequences = ['NOT AND', 'NOT OR', 'AND AND', 'OR OR']
-        for seq in invalid_sequences:
-            if seq in reconstructed_query:
-                return False  # Found an invalid sequence
-        return True
-
     # Tokenize the query in a custom way to handle period and apostrophe in the query
     def custom_tokenize(text):
         # Preprocessing: Protect specific punctuation with placeholders
