@@ -46,12 +46,6 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 postings_file.seek(17)
                 print(postings_file.readline())
                 posting_list_raw = postings_file.readline().split()
-                # postings_file.seek(offset+1)
-                # print('The line is: ', postings_file.readline())
-                # print('The term is: ', term)
-                # print('The next line is: ', postings_file.readline())
-                # print('The next next line is: ', postings_file.readline())
-                # print('The next next next line is: ', postings_file.readline())
             skip_count = int(posting_list_raw[0])
             posting_list = [int(i) for i in posting_list_raw[1:]]
             posting_linked_list = construct_linked_list(skip_count, posting_list)
