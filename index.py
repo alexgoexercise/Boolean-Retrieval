@@ -87,7 +87,13 @@ def build_index(in_dir, out_dict, out_postings):
         for doc_id in sorted_filenames:
             postings_file.write(str(doc_id) + ' ')
         postings_file.write('\n')
-        dict_file.write("Full doc_id pointer: " + str(pointer))
+        dict_file.write("Full_doc_id_pointer 1" + str(pointer))
+
+    # Delete temporary files
+    if os.path.exists(temp_posting_path):
+        os.remove(temp_posting_path)
+    if os.path.exists(temp_dict_path):
+        os.remove(temp_dict_path)
 
 def write_block_to_disk(postings_lists, doc_freq, dictionary_file, postings_file):
     # Sort all keys before writing to disk
@@ -137,10 +143,12 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
             print("This is the pointer")
             print(pointer)
             block_handles[i].seek(pointer)
+            # term + doc_freq + posting pointer + self pointer in a block
             term_len = block_handles[i].readline()
             print("This is the term before processing")
             print(term_len)
             term_info = term_len.strip().split(' ')
+            # print(term_info)
             term = term_info[0].strip()
             # print(term)
             if term == '-----BLOCK_END-----':
@@ -220,11 +228,11 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         # print(doc_freq_to_merge)
         # print(final_doc_freq)
         # Write merged dictionary and posting lists to final files
+        number_of_skips = str(round(math.sqrt(len(merged_postings)))) 
+        merged_postings_string = ' '.join(str(posting_id) for posting_id in merged_postings)
         final_pointer = final_posting.tell()
-        final_posting.write(' '.join(str(posting_id) for posting_id in merged_postings) + '\n')
-        final_dictionary.write(f"{smallest_term}: {final_doc_freq}, {final_pointer}\n")
-
-
+        final_posting.write(number_of_skips + ' ' + merged_postings_string + '\n')
+        final_dictionary.write(f"{smallest_term} {final_doc_freq} {final_pointer}\n")
 
     for handle in block_handles + posting_handles:
         handle.close()
