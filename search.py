@@ -4,7 +4,7 @@ import nltk
 import sys
 import getopt
 from nltk import PorterStemmer
-from nltk import word_tokenize
+from nltk.tokenize import word_tokenize
 
 class Node:
     def __init__(self, doc_id):
@@ -281,18 +281,6 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 operand_stack.append(result)
         return operand_stack.pop()
 
-    # Tokenize the query in a custom way to handle period and apostrophe in the query
-    def custom_tokenize(text):
-        # Preprocessing: Protect specific punctuation with placeholders
-        protected_text = text.replace('.', 'R_PERIOD').replace("'", "R_APOSTROPHE")
-
-        # Tokenize
-        tokens = word_tokenize(protected_text)
-
-        # Postprocessing: Restore the protected punctuation
-        restored_tokens = [token.replace('R_PERIOD', '.').replace('R_APOSTROPHE', "'") for token in tokens]
-
-        return restored_tokens
 
     # Function that checks if the input query is valid
     # It returns FALSE if the query is invalid, otherwise it returns TRUE
@@ -318,15 +306,15 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
         for i, token in enumerate(parsed_tokens):
             if token not in expected_tokens_start:
-                print('Query: ', tokens, ' has invalid token')
-                print(f'Unexpected token: {token}')
+                # print('Query: ', tokens, ' has invalid token')
+                # print(f'Unexpected token: {token}')
                 return False  # Found an unexpected token
 
             # Update expected tokens based on the current token
             expected_tokens_start = valid_next_tokens.get(token, set())
 
         if parsed_tokens[-1] in {'AND', 'OR', 'NOT'}:
-            print('The query should not end with an operator')
+            # print('The query should not end with an operator')
             return False
 
         return True
@@ -334,10 +322,10 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     # Function that process the query list and write the result to the result file
     def process_query(queries, dictionary, postings_file, results_file):
         for query in queries:
-            infix_tokens = custom_tokenize(query)
+            infix_tokens = word_tokenize(query)
             # Check if the query is valid
             if not is_valid_query(infix_tokens):
-                results_file.write('The input is invalid' + '\n')
+                results_file.write('\n')
                 continue
             # Normalise and stem the tokens
             tokens = normalise_and_stem(infix_tokens)

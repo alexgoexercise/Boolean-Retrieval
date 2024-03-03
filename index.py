@@ -132,25 +132,16 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         index = 0
 
         # Read initial term information from each block and store its posting pointers
-        # print("Current terms under consideration")
         for i, pointer in enumerate(block_pointers[:]):
-            # print("This is the pointer")
-            # print(pointer)
             block_handles[i].seek(pointer)
             # term + doc_freq + posting pointer + self pointer in a block
             term_len = block_handles[i].readline()
-            if term_len == '\n':
-                term_len = block_handles[i].readline()
-            # print("This is the term before processing")
-            # print(term_len)
             term_info = term_len.strip().split(' ')
             term = term_info[0].strip()
             if term == '-----BLOCK_END-----':
                 block_pointers.remove(pointer)
                 continue
             term_lengths.append(term_len)
-            # print("This is the term info")
-            # print(term_info)
             doc_freq.append(int(term_info[1]))
             posting_pointers.append(int(term_info[2]))
             current_terms.append((term, index))
@@ -163,9 +154,6 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
         # Find all terms to be merged
         sorted_terms = sorted(current_terms, key=lambda x: x[0])
         smallest_term = sorted_terms[0][0]
-
-        print("This is the smallest term")
-        print(smallest_term)
 
         # Find their corresponding posting list and doc_freq of the terms
         terms_to_merge = []
@@ -186,12 +174,8 @@ def n_way_merge(block_pointers, read_dictionary_file, read_postings_file, write_
             temp_handle = open(read_dictionary_file, 'r')
             temp_handle.seek(temp_block_pointer)
             temp_line = temp_handle.readline()
-            # print('the term is: ', term)
-            # print('the line is: ', temp_line)
-            # print('old pointer was: ', temp_block_pointer)
-            block_pointers[index] = temp_handle.tell()
-            # print('new pointer is: ', str(block_pointers[index]))
-            block_pointers[index] += len(term_lengths[index])
+            new_pointer = temp_handle.tell()
+            block_pointers[index] = new_pointer
             temp_handle.close()
 
 
