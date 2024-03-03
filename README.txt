@@ -29,7 +29,6 @@ Main step:
 1. The query is tokenized and converted into postfix notation using the shunting yard algorithm.
 2. The postfix notation is then processed to return the index of relevant documents.
 
-
 Things to Notice:
 1.
 The dictionary and posting lists are stored in the form of .txt file, which is prone to attacks if
@@ -37,11 +36,21 @@ someone tries to modify the files. Hence, please try not to touch or modify thos
 2.
 The query handling part of this program is not designed to handle malicious checks. For example, unbalanced parenthesis, etc.
 There is a simple query validity check, however, it only handles a few extreme cases of wrong input that I can think of.
+3.
+As noticed by our team, the formatting of text files between Windows and MacOS is different, especially when it
+comes to handeling new lines. Hence, the program may not work properly if the text files are generated in Windows and
+run in MacOS or vice versa. Please make sure to run the program in the same OS that the text files are generated in.
 
 == Files included with this submission ==
 
+main files to be executed:
 index.py: This is the python program that constructs the index and store them into hard disk.
 search.py: This is the python program that processes the query and returns the index of relevant documents.
+
+other files:
+README.txt: This file is served as an explanation of the submission.
+sanity-queries.txt: This file contains the queries that are used to test the search.py program.
+essay_answers.txt: This file contains the answers to the essay questions.
 
 == Statement of individual work ==
 
