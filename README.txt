@@ -1,4 +1,4 @@
-This is the README file for A0000000X's submission
+This is the README file for A0242210A and A0239866J's submission
 Email(s): e0795130@u.nus.edu
 e0774464@u.nus.edu
 
@@ -38,7 +38,7 @@ The query handling part of this program is not designed to handle malicious chec
 There is a simple query validity check, however, it only handles a few extreme cases of wrong input that I can think of.
 3.
 As noticed by our team, the formatting of text files between Windows and MacOS is different, especially when it
-comes to handeling new lines. Hence, the program may not work properly if the text files are generated in Windows and
+comes to handling new line chars. Hence, the program may not work properly if the text files are generated in Windows and
 run in MacOS or vice versa. Please make sure to run the program in the same OS that the text files are generated in.
 
 == Files included with this submission ==
